@@ -48,6 +48,7 @@ public class MessageCollection implements Iterable<String> {
     /**
      * Recalls the most recent message.
      * Returns the message and notifies the observers.
+     * Returns null on failure.
      */
     public String recall() {
         String msg;
@@ -57,6 +58,7 @@ public class MessageCollection implements Iterable<String> {
         }
         if (!recalls.hasNext()) {
             emptyRecallHandler.update(null);
+            return null;
         }
         msg = recalls.next();
         recallHandler.update(msg);
