@@ -10,13 +10,13 @@ import util.GenericObservable;
 /**
  * A collection of messages.
  */
-public class MessageCollection implements Iterable<String> {
+public class MessageCollection implements Iterable<Message> {
     
     /* Messaging functionalities. */
-    private List<String> records;
-    private Iterator<String> recalls;
+    private List<Message> records;
+    private Iterator<Message> recalls;
     private GenericObservable<Void> emptyRecallHandler;
-    private GenericObservable<String> recallHandler;
+    private GenericObservable<Message> recallHandler;
 
     /* Configuration of the recalls. */
     private boolean masked;
@@ -31,14 +31,14 @@ public class MessageCollection implements Iterable<String> {
      * Returns an iterator of all the messages in this collection.
      */
     @Override
-    public Iterator<String> iterator() {
+    public Iterator<Message> iterator() {
         return records.iterator();
     }
 
     /**
      * Adds a message to the records.
      */
-    public void add(String message) {
+    public void add(Message message) {
         records.add(message);
         if (!masked && recalls!=null) {
             resetRecall();
@@ -50,8 +50,8 @@ public class MessageCollection implements Iterable<String> {
      * Returns the message and notifies the observers.
      * Returns null on failure.
      */
-    public String recall() {
-        String msg;
+    public Message recall() {
+        Message msg;
 
         if (recalls==null) {
             recalls = iterator();
@@ -72,7 +72,7 @@ public class MessageCollection implements Iterable<String> {
         recalls = null;
     }
 
-    public void onRecall(Consumer<String> action) {
+    public void onRecall(Consumer<Message> action) {
         recallHandler.add(action);
     }
 
