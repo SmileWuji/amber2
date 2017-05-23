@@ -1,5 +1,6 @@
 package util;
 
+import java.io.Closeable;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -42,5 +43,9 @@ public class GenericObservable<T> {
     
     public void unsubscribe(Consumer<T> action) {
         remove(action);
+    }
+
+    public void close() {
+        observers.clear();
     }
 }

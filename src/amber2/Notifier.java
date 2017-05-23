@@ -85,12 +85,14 @@ public class Notifier implements Runnable {
         first = notifications.first();
         while (first.at().compareTo(current) <= 0) {
             expireHandler.update(first);
+            notifications.remove(first);
             if (notifications.isEmpty()) {
                 return;
             }
             first = notifications.first();
         }
-        
+        expireHandler.close();
+        expireHandler = null;
     }
 
     private Notification getTheNearetFuture() {
@@ -139,9 +141,39 @@ public class Notifier implements Runnable {
     
     /**
      * For testing purpose...
+     * @throws InterruptedException 
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         System.out.println(System.currentTimeMillis());
+        long now = System.currentTimeMillis();
+        Date current = new Date(now);
+        Date expired1 = new Date(now - 7000);
+        Date expired2 = new Date(now - 5000);
+        Date todo10sec = new Date(now + 10000);
+        Date todo15sec = new Date(now + 15000);
+        Notification.Builder builder = new Notification.Builder();
+        Notification nt1, nt2, nt3, nt4;
+        nt1 = builder.since(current).at(expired1).cast("I'm an angel with a shotgun").build();
+        nt2 = builder.since(current).at(expired2).cast("Fighting 'till the wars won").build();
+        nt3 = builder.since(current).at(todo10sec).cast("I don't care if haven won't take me back").build();
+        nt4 = builder.since(current).at(todo15sec).cast("coda").build();
+        
+        Notifier app = new Notifier();
+        Consumer<Notification> print = n -> System.out.println(n);
+        app.onExpire(print);
+        app.onNotify(print);
+        
+        System.out.println("SET");
+        app.add(nt1);
+        app.add(nt2);
+        app.add(nt3);
+        app.add(nt4);
+        System.out.println("START");
+        
+        new Thread(app).start();
+        Thread.sleep(5000);
+        app.add(nt1);
+        
     }
 
 }
