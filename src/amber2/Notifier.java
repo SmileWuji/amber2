@@ -1,6 +1,11 @@
 package amber2;
 
+import java.util.Date;
+import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Consumer;
+
+import util.GenericObservable;
 
 /**
  * Alarm! Surprise!
@@ -8,7 +13,7 @@ import java.util.TreeSet;
 public class Notifier implements Runnable {
 
     /* A set of notifications. */
-    private Set<Notification> notifications;
+    private SortedSet<Notification> notifications;
     private GenericObservable<Notification> notifyHandler; 
     private GenericObservable<Notification> editHandler;
     private GenericObservable<Notification> expireHandler;
@@ -24,7 +29,10 @@ public class Notifier implements Runnable {
      * Add a notification to this notifier.
      */
     public void add(Notification task) {
-        // TODO: Implement this method!
+        synchronized (notifications) {
+            notifications.add(task);
+            editHandler.update(task);
+        }
     }
 
     /**
@@ -49,12 +57,18 @@ public class Notifier implements Runnable {
                 nearest = getTheNearetFuture();
                 timeElapsed = getTimeElapsed(nearest);
                 while (timeElapsed > 0 || nearest == null) {
-                    this.wait(timeElapsed);
+                    try {
+                        notifications.wait(timeElapsed);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                        return;
+                    }
                     nearest = getTheNearetFuture();
                     timeElapsed = getTimeElapsed(nearest);
                 }
 
-                // At this point, the nearest notification is activated.
+                /* At this point, the nearest notification is activated. */
                 pollNotification(nearest);
             }
         }
@@ -62,11 +76,28 @@ public class Notifier implements Runnable {
     }
 
     private void pollExpiredOnes() {
-        // TODO: Implement this method!
+        Notification first;
+        Date current = new Date(System.currentTimeMillis());
+        
+        if (notifications.isEmpty()) {
+            return;
+        }
+        first = notifications.first();
+        while (first.at().compareTo(current) <= 0) {
+            expireHandler.update(first);
+            if (notifications.isEmpty()) {
+                return;
+            }
+            first = notifications.first();
+        }
+        
     }
 
     private Notification getTheNearetFuture() {
-        // TODO: Implement this method!
+        if (notifications.isEmpty()) {
+            return null;
+        }
+        return notifications.first();
     }
 
     /**
@@ -74,24 +105,28 @@ public class Notifier implements Runnable {
      * Returns 0 in case the task is null.
      */
     public long getTimeElapsed(Notification task) {
-        // TODO: Implement this method!
+        if (task == null) {
+            return 0;
+        }
+        return task.at().getTime() - System.currentTimeMillis();
     }
 
     /**
      * Assuming that the notification task is valid... proceed!
      */
     private void pollNotification(Notification task) {
-        // TODO: Implement this method!
+        notifyHandler.update(task);
+        notifications.remove(task);
     }
 
 /* The methods below are for the generic observers. */
 
     public void onNotify(Consumer<Notification> action) {
-        // TODO: Implement this method!
+        notifyHandler.bind(action);
     }
 
     public void onEdit(Consumer<Notification> action) {
-        // TODO: Implement this method!
+        editHandler.bind(action);
     }
 
     /**
@@ -99,7 +134,14 @@ public class Notifier implements Runnable {
      * After that the handlers will not be executed again.
      */
     public void onExpire(Consumer<Notification> action) {
-        // TODO: Implement this method!
+        expireHandler.bind(action);
+    }
+    
+    /**
+     * For testing purpose...
+     */
+    public static void main(String[] args) {
+        System.out.println(System.currentTimeMillis());
     }
 
 }
